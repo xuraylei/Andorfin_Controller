@@ -12,24 +12,24 @@ import org.andorfin.protocol.action.Operation;
 	public class AOFPredicate{
 		protected int len;
 		protected byte event;
-		protected List<Operation> operations;
+		protected Operation[] operations;
 		
 		
 		public AOFPredicate (byte e){
 			this.event = e;
-			this.operations = new ArrayList();
+			this.operations = new Operation[2];
 			this.len = Integer.SIZE + Byte.SIZE +
-					operations.size()*Operation.getLength();
+					2*Operation.getLength();
 		}
 		
 		public int getLength(){
 			return len;
 		}
-		public AOFPredicate addOperation(byte event, Operation operation){
+		public AOFPredicate addOperation(byte event, Operation operation1, Operation operation2){
 			this.event = event;
-			this.operations.add(operation);
-			this.len = Integer.SIZE + Byte.SIZE +
-					operations.size()*Operation.getLength();
+			this.operations[0] = operation1;
+			this.operations[1] = operation2;
+			this.len = Integer.SIZE + Byte.SIZE + 2*Operation.getLength();
 			
 			return this;
 		}

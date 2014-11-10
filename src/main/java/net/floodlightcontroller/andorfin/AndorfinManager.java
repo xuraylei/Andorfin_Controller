@@ -55,7 +55,7 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 		AccessControlAction ac = new AccessControlAction();
 		
 		AOFPredicate p = new AOFPredicate(EventType.TIME);
-		p.addOperation(EventType.TIME, new Operation(OperationType.GEQ, 8));
+		p.addOperation(EventType.TIME, new Operation(OperationType.GEQ, 8),new Operation(OperationType.LEQ, 10));
 		
 		ManagementAction ma = new ManagementAction();
 		
