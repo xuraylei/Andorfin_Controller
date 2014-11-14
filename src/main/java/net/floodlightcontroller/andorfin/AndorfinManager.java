@@ -10,6 +10,7 @@ import java.util.Map;
 import org.andorfin.protocol.AOFMatch;
 import org.andorfin.protocol.AOFPolicyRegistration;
 import org.andorfin.protocol.AOFPredicate;
+import org.andorfin.protocol.ManagementAction;
 import org.andorfin.protocol.action.AOFActionModFlowTable;
 import org.andorfin.protocol.action.AOFFlowMod;
 import org.andorfin.protocol.action.EventType;
@@ -55,7 +56,7 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 		AccessControlAction ac = new AccessControlAction();
 		
 		AOFPredicate p = new AOFPredicate(EventType.TIME);
-		p.addOperation(EventType.TIME, new Operation(OperationType.GEQ, 8),new Operation(OperationType.LEQ, 10));
+		p.addOperation(EventType.TIME, new Operation(OperationType.GEQ, (byte) 8),new Operation(OperationType.LEQ, (byte)10));
 		
 		ManagementAction ma = new ManagementAction();
 		
@@ -65,6 +66,23 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 		
 		this.rules.add(test_rule);
 	}
+	public static AndorfinRule generateAOFRuleTest(MACAddress id){
+		AndorfinRule test_rule = new AndorfinRule(id);
+		
+		AccessControlAction ac = new AccessControlAction();
+		
+		AOFPredicate p = new AOFPredicate(EventType.TIME);
+		p.addOperation(EventType.TIME, new Operation(OperationType.GEQ, (byte) 8),new Operation(OperationType.LEQ, (byte)10));
+		
+		ManagementAction ma = new ManagementAction();
+		
+		test_rule.addPredicate(p);
+		test_rule.setAccessControlAction(ac);
+		test_rule.setManagementAction(ma);
+		
+		return test_rule;
+	}
+	
 	
 	@Override
 	public String getName() {
@@ -149,7 +167,7 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 		//in Andorfin, id is stored in source mac address
 		MACAddress id;
 		// the hash for installed flow rule
-		int flow_hash = -1;
+		byte flow_hash = -1;
 		
 		AOFPolicyRegistration reg_msg = new AOFPolicyRegistration();
 		AOFMatch match = new AOFMatch();
@@ -164,7 +182,7 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
                 (OFFlowMod) floodlightProvider.getOFMessageFactory()
                                               .getMessage(OFType.FLOW_MOD);
 		
-      //TEST 
+       //TEST 
       		addAOFRuleTest(id);
         
 		for (AndorfinRule rule: rules){
@@ -174,7 +192,7 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 				//according to access control policy for packet forwarding
 				OFMatch of_match = new OFMatch();
 		        of_match.loadFromPacket(pi.getPacketData(), pi.getInPort());
-		        flow_hash = of_match.hashCode();
+		        flow_hash = (byte)of_match.hashCode();
 		        
 		        List<OFAction> of_actions = new ArrayList<OFAction>(); // Set no action to drop
 				if (rule.access_control.is_allowed){
@@ -195,12 +213,14 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 				for (AOFPredicate p: rule.predicates){
 					match.addPredicate(p);
 				}
+				reg_msg.setMatch(match);
+				
 				//add flow_mod to AOFreigstration msg
 				if ( flow_hash != -1){ // no corresponding flow rule
-					AOFFlowMod flow_mod = new AOFFlowMod(flow_hash);
-					AOFActionModFlowTable aof_action = new AOFActionModFlowTable(flow_mod);
+					//AOFFlowMod flow_mod = new AOFFlowMod(flow_hash);
+					AOFActionModFlowTable aof_action = new AOFActionModFlowTable(flow_hash);
 					if (!rule.management.is_deny_of_action){ // if the action is enable flow_rule
-						aof_action.setFlowMod(flow_mod.enableFlowRuleAction());
+						aof_action.enableFlowRuleAction();
 					}
 						reg_msg.addAction(aof_action);
 				}
@@ -209,12 +229,18 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 					
 				}
 				
+				
+			
+				logger.info("event_type:{}",reg_msg.match.predicate.event);
+				
 				byte[] byte_reg_msg = null;
 				try{
 					byte_reg_msg = reg_msg.serialize();
 				}catch (IOException e) {
 		            logger.error("Failure serialization", e);
 		        }
+				
+				logger.info("event_type:{}",reg_msg.match.predicate.event);
 				
 				OFPacketOut po = new OFPacketOut()
 				.setActions(Arrays.asList(new OFAction[] {new OFActionOutput().setPort(OFPort.OFPP_FLOOD.getValue())}))
@@ -224,6 +250,9 @@ public class AndorfinManager implements IOFMessageListener, IFloodlightModule {
 	            .setPacketData(byte_reg_msg);
 				po.setLengthU(OFPacketOut.MINIMUM_LENGTH + po.getActionsLengthU()
 		                + byte_reg_msg.length);
+				for (byte b : po.getPacketData()){
+					logger.info("{}:",b);
+				}
 		     try {
 		            sw.write(fm, null);
 		            sw.write(po, null);      

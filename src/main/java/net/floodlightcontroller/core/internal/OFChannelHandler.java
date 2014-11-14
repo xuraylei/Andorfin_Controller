@@ -3,11 +3,15 @@ package net.floodlightcontroller.core.internal;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
+
+import net.floodlightcontroller.andorfin.AndorfinManager;
+import net.floodlightcontroller.andorfin.AndorfinRule;
 
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IOFSwitch;
@@ -20,7 +24,16 @@ import net.floodlightcontroller.debugcounter.IDebugCounterService.CounterExcepti
 import net.floodlightcontroller.storage.IResultSet;
 import net.floodlightcontroller.storage.StorageException;
 import net.floodlightcontroller.util.LoadMonitor;
+import net.floodlightcontroller.util.MACAddress;
 
+import org.andorfin.protocol.AOFMatch;
+import org.andorfin.protocol.AOFPolicyRegistration;
+import org.andorfin.protocol.AOFPredicate;
+import org.andorfin.protocol.action.AOFActionModFlowTable;
+import org.andorfin.protocol.action.AOFFlowMod;
+import org.andorfin.protocol.action.EventType;
+import org.andorfin.protocol.action.Operation;
+import org.andorfin.protocol.action.OperationType;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -44,6 +57,8 @@ import org.openflow.protocol.OFGetConfigRequest;
 import org.openflow.protocol.OFHello;
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFPacketIn;
+import org.openflow.protocol.OFPacketOut;
+import org.openflow.protocol.OFPort;
 import org.openflow.protocol.OFPortStatus;
 import org.openflow.protocol.OFQueueGetConfigReply;
 import org.openflow.protocol.OFSetConfig;
@@ -59,6 +74,8 @@ import org.openflow.protocol.OFError.OFFlowModFailedCode;
 import org.openflow.protocol.OFError.OFHelloFailedCode;
 import org.openflow.protocol.OFError.OFPortModFailedCode;
 import org.openflow.protocol.OFError.OFQueueOpFailedCode;
+import org.openflow.protocol.action.OFAction;
+import org.openflow.protocol.action.OFActionOutput;
 import org.openflow.protocol.factory.BasicFactory;
 import org.openflow.protocol.factory.MessageParseException;
 import org.openflow.protocol.statistics.OFDescriptionStatistics;
@@ -107,7 +124,10 @@ class OFChannelHandler
     private int handshakeTransactionIds = -1;
 
 
-
+	
+    
+    
+    
     /**
      * When we remove a pending role request and set the role on the switch
      * we use this enum to indicate how we arrived at the decision.
@@ -656,8 +676,13 @@ class OFChannelHandler
                         new OFDescriptionStatistics();
                 ChannelBuffer data =
                         ChannelBuffers.buffer(description.getLength());
-                OFStatistics f = m.getFirstStatistics();
-                f.writeTo(data);
+                try{
+                	OFStatistics f = m.getFirstStatistics();
+                	f.writeTo(data);
+                }catch (IllegalArgumentException e){
+                	log.error(e.getMessage());
+                }
+                
                 description.readFrom(data);
                 h.sw = h.controller.getOFSwitchInstance(description);
                 // set switch information
@@ -809,7 +834,51 @@ class OFChannelHandler
                  LogMessageDoc.CHECK_CONTROLLER )
             @Override
             void processOFError(OFChannelHandler h, OFError m)
-                    throws IOException {
+            		throws IOException {
+            	
+            	//Lei: test
+ /*           	AOFPolicyRegistration reg_msg = new AOFPolicyRegistration();
+                AndorfinRule rule;
+                AOFMatch match = new AOFMatch();
+                int flow_hash = 1111;
+               
+                MACAddress id = MACAddress.valueOf("1:2:3:4:5:6");
+            	rule = (AndorfinManager.generateAOFRuleTest(id));
+                
+                for (AOFPredicate p: rule.predicates){
+					match.addPredicate(p);
+				}
+                AOFFlowMod flow_mod = new AOFFlowMod(flow_hash);
+				AOFActionModFlowTable aof_action = new AOFActionModFlowTable(flow_mod);
+				if (!rule.management.is_deny_of_action){ // if the action is enable flow_rule
+					aof_action.setFlowMod(flow_mod.enableFlowRuleAction());
+				}
+					reg_msg.addAction(aof_action);
+                
+                byte[] byte_reg_msg = null;
+				try{
+					byte_reg_msg = reg_msg.serialize();
+				}catch (IOException e) {
+		            log.error("Failure serialization", e);
+		        }
+                
+            	
+            	// add test for send packet-out
+            	OFPacketOut po = new OFPacketOut()
+				.setActions(Arrays.asList(new OFAction[] {new OFActionOutput().setPort(OFPort.OFPP_FLOOD.getValue())}))
+	            .setActionsLength((short) OFActionOutput.MINIMUM_LENGTH)
+	            .setBufferId(-1)
+	            .setInPort((short)1)
+	            .setPacketData(byte_reg_msg);
+				po.setLengthU(OFPacketOut.MINIMUM_LENGTH + po.getActionsLengthU()
+		                + byte_reg_msg.length);
+            
+			     h.channel.write(po, null);
+
+*/				
+				 //Lei: test
+				
+				
                 // role changer will ignore the error if it isn't for it
                 boolean didHandle = h.roleChanger.deliverError(m);
                 if (didHandle)
@@ -1431,8 +1500,8 @@ class OFChannelHandler
             counters.switchDisconnectReadTimeout.updateCounterWithFlush();
             ctx.getChannel().close();
         } else if (e.getCause() instanceof HandshakeTimeoutException) {
-            log.error("Disconnecting switch {}: failed to complete handshake",
-                      getSwitchInfoString());
+            log.error("Disconnecting switch {}:{} failed to complete handshake",
+                      getSwitchInfoString(),this.state);
             counters.switchDisconnectHandshakeTimeout.updateCounterWithFlush();
             ctx.getChannel().close();
         } else if (e.getCause() instanceof ClosedChannelException) {

@@ -7,6 +7,7 @@ import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.util.MACAddress;
 
 import org.andorfin.protocol.AOFPredicate;
+import org.andorfin.protocol.ManagementAction;
 
 
 class AccessControlAction{
@@ -22,19 +23,7 @@ class AccessControlAction{
 	}
 }
 
-class ManagementAction{
-	public boolean is_report;
-	public boolean is_deny_of_action;
-	
-//	public short of_action;
-	
-	public ManagementAction(){
-		this.is_report = false;
-		this.is_deny_of_action = false;
-		
-//		this.of_action = -1;
-	}
-}
+
 
 /*class AnforfinRule is representation of andorfin rule inside Floodlight controller
  * 
@@ -42,9 +31,9 @@ class ManagementAction{
 
 public class AndorfinRule{
 	protected MACAddress app_id;
-	protected List<AOFPredicate> predicates;
+	public List<AOFPredicate> predicates;
 	protected AccessControlAction  access_control;
-	protected ManagementAction management;
+	public ManagementAction management;
 	
 	public AndorfinRule(MACAddress id){
 		this.app_id = id;

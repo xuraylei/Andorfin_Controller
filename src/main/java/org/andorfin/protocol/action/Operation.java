@@ -1,11 +1,13 @@
 package org.andorfin.protocol.action;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class Operation{
+	
 	protected byte operation_type;
-	protected int value1;
+	protected byte value1;
 //	protected int value2;
 		
 	public Operation(){
@@ -20,7 +22,7 @@ public class Operation{
 //		this.value2 = v2;
 //	}
 		
-	public Operation(byte op_type,int v1){
+	public Operation(byte op_type,byte v1){
 		this.operation_type = op_type;
 		this.value1 = v1;
 	}
@@ -31,10 +33,12 @@ public class Operation{
 	
 	public  byte[] serialize() throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream( );
+//		DataOutputStream dos = new DataOutputStream( out );
 		
 		out.write(operation_type);
 		out.write(value1);
 //		out.write(value2);
+
 				
 		return out.toByteArray();
 		}

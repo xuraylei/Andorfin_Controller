@@ -1,5 +1,6 @@
 package org.andorfin.protocol.action;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.andorfin.protocol.SerializationUtils;
@@ -11,7 +12,7 @@ public class AOFAction {
     
 	protected byte type;
 	//of_action is the hash value for exact OFMatch of OF flow(s)
-	protected int of_action;
+//	protected int of_action;
 	
     public static int getLength() {
         return Byte.SIZE + Integer.SIZE;
@@ -27,6 +28,11 @@ public class AOFAction {
     }
 
 	public  byte[] serialize() throws IOException {
-			return SerializationUtils.serialize(this);
+		ByteArrayOutputStream out = new ByteArrayOutputStream( );
+		
+		out.write(this.type);
+		
+	   
+		return out.toByteArray();
 		}
 }

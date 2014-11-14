@@ -1,20 +1,21 @@
 package org.andorfin.protocol;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.*;
 import org.andorfin.protocol.AOFPredicate;
 
 public class AOFMatch{
-	protected int len;
+//	protected int len;
 //	protected List<AOFPredicate> predicates;
-	protected AOFPredicate predicate;
+	public AOFPredicate predicate;
 	
 	
 	
 	public AOFMatch(){
 //		this.predicates = new ArrayList();
-		this.len = Integer.SIZE + predicate.getLength();
+//		this.len = Integer.SIZE + AOFPredicate.getLength();
 //		for(AOFPredicate p : predicates){
 //			this.len += p.getLength();
 //		}
@@ -22,7 +23,8 @@ public class AOFMatch{
 	
 	
 	public int getLength(){
-		return len;
+//		return len;
+		return 11;
 	}
 		
 	public AOFMatch addPredicate(AOFPredicate p){
@@ -32,14 +34,15 @@ public class AOFMatch{
 //		for(AOFPredicate p : predicates){
 //			this.len += p.getLength();
 //		}
-		this.len = Integer.SIZE + predicate.getLength();
+//		this.len = Integer.SIZE + predicate.getLength();
 		return this;
 	}
 	
 	public  byte[] serialize() throws IOException {
 			ByteArrayOutputStream out = new ByteArrayOutputStream( );
+	//		DataOutputStream dos = new DataOutputStream( out );
 			
-			out.write(len);
+//			dos.writeInt(len);
 //			for (AOFPredicate p : this.predicates){
 //				 out.write(p.serialize());
 				
